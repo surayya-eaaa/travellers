@@ -1,0 +1,45 @@
+@import './base.css';
+
+#app {
+  max-width: 1024px;
+  margin: 0 auto;
+  font-weight: normal;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {background-color: hsla(160, 100%, 37%, 1);}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 2048px) {
+  body {
+    display: flow;
+    place-items: center;
+  }
+
+  #app {
+    display: flow;
+  }
+}

@@ -1,0 +1,86 @@
+/**
+ * Copyright © MagePal LLC. All rights reserved.
+ * See COPYING.txt for license details.
+ * http://www.magepal.com | support@magepal.com
+ */
+
+define([
+    'Magento_Customer/js/customer-data',
+    'jquery',
+    'underscore',
+], function (customerData, $, _) {
+    'use strict';
+
+    var refreshed = false;
+
+    function toCamelCase(str)
+    {
+        return str.replace(/[\W]+/g," ").replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
+            return index === 0 ? word.toLowerCase() : word.toUpperCase();
+        }).replace(/\s+/g, '');
+    }
+
+    /** Only enable after  **/
+    $(document).on('customer-data-reload', function (event, sections) {
+        var sectionFilter = ['customer', 'compare-products', 'wishlist'];
+
+        if (_.isArray(sections) && (!sections.length || _.intersection(sections, sectionFilter).length)) {
+            refreshed = true;
+        }
+    });
+
+    var trackData = function (_dataObject, gtmDataLayer) {
+        if (refreshed && _.has(_dataObject, 'mpDataLayer') && _.isArray(_dataObject['mpDataLayer'])) {
+            refreshed = false;
+            _.forEach(_dataObject['mpDataLayer'],function (data) {
+                gtmDataLayer.push(data);
+            });
+        }
+    };
+
+    return function (config) {
+        var gtmDataLayer = window[config.dataLayer] = window[config.dataLayer] || [];
+        var customer = customerData.get('customer');
+        var compare = customerData.get('compare-products');
+        var wishlist = customerData.get('wishlist');
+        var formValidationHistoryTracking = '';
+
+        customer.subscribe(function (dataObject) {
+            trackData(dataObject, gtmDataLayer);
+        }, this);
+
+        compare.subscribe(function (dataObject) {
+            trackData(dataObject, gtmDataLayer);
+        }, this);
+
+        wishlist.subscribe(function (dataObject) {
+            trackData(dataObject, gtmDataLayer);
+        }, this);
+
+        /** trigger Form validation fail event **/
+        $('form').on('invalid-form', function (data) {
+            if (_.has(data, 'target')) {
+                var id = $(data.target).attr('id')
+                if (id && formValidationHistoryTracking !== id) {
+                    var error = {
+                        htmlId: id,
+                        pageTitle: $(document).attr('title')
+                    };
+
+                    gtmDataLayer.push(
+                        {
+                            event:'formValidationFailed',
+                            formError: error
+                        },
+                        {
+                            event: toCamelCase('validation Failed ' + id),
+                            formError: error
+                        }
+                    );
+
+                    formValidationHistoryTracking = id;
+                }
+            }
+        });
+    }
+});
